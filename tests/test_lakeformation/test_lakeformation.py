@@ -18,8 +18,9 @@ def test_create_lf_tag():
     response = lf_client.create_lf_tag(TagKey=tag_key, TagValues=tag_values)
     # print(f"{response=}")
 
+    print("Listing tags")
     response = lf_client.list_lf_tags()
-    print(response)
+    print(f'{response=}')
     # assert response == "Added tags"
 
 #     raise Exception("NotYetImplemented")
@@ -29,5 +30,6 @@ def test_create_lf_tag():
 # def test_list_lf_tags():
 #     client = boto3.client("lakeformation", region_name="us-east-2")
 #     resp = client.list_lf_tags()
+#     print(resp)
 
 #     raise Exception("NotYetImplemented")

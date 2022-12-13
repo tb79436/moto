@@ -32,22 +32,23 @@ class LakeFormationBackend(BaseBackend):
 
     def __init__(self, region_name, account_id):
         super().__init__(region_name, account_id)
-        self.tag = dict()
+        self.tags = dict()
 
     # add methods from here
 
     def create_lf_tag(self, catalog_id, tag_key, tag_values):
-        if tag_key in self.tag:
-            raise ResourceAlreadyExistsException()
+        if self.tags.get(catalog_id):
+            if tag_key in list(self.tags.get(catalog_id)):
+                raise ResourceAlreadyExistsException()
 
-        self.tag[catalog_id] = Tag(catalog_id, tag_key, tag_values)
+        self.tags[catalog_id] = {"catalog_id": catalog_id, "tag_key": tag_key, "tag_values": tag_values}
 
-        return self.tag[catalog_id]
+        return self.tags[catalog_id]
 
 
     def list_lf_tags(self, catalog_id, resource_share_type, max_results, next_token):
-        tags = self.tag
-        print(Tag.to_describe_dict(tags))
+        tags = self.tags.get(catalog_id)
+        print(tags)
         return tags, {}
         # return lf_tags, next_token
 

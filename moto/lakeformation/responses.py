@@ -32,23 +32,20 @@ class LakeFormationResponse(BaseResponse):
 
 
     def list_lf_tags(self):
-        catalog_id = self._get_param("CatalogId")
-        resource_share_type = self._get_param("ResourceShareType")
-        max_results = self._get_param("MaxResults")
-        next_token = self._get_param("NextToken")
-        if self._get_param("CatalogId") is None:
-            catalog_id = "AwsDataCatalog"
         lf_tags, next_token = self.lakeformation_backend.list_lf_tags(
-            catalog_id=catalog_id,
-            resource_share_type=resource_share_type,
-            max_results=max_results,
-            next_token=next_token,
+            catalog_id=self._get_param("CatalogId"),
+            resource_share_type=self._get_param("ResourceShareType"),
+            max_results=self._get_param("MaxResults"),
+            next_token=self._get_param("NextToken"),
         )
+        if lf_tags is None:
+            return json.dumps({
+                "LFTags": lf_tags,
+                "NextToken": next_token
+            })
+        return json.dumps({
+            "LFTags": lf_tags,
+            "NextToken": next_token
+        })
+
         # TODO: handle lots of tags
-        dictio = json.dumps(dict(lfTags=lf_tags, nextToken=next_token))
-        print(dictio)
-        result = {"LFTags": lf_tags}
-        if next_token:
-            result["nextToken"] = next_token
-        # return dictio
-        return json.dumps(dict(result))

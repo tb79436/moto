@@ -4,27 +4,28 @@ from moto.core import BaseBackend, BackendDict, BaseModel
 from moto.logs.exceptions import (
     ResourceAlreadyExistsException
 )
-from moto.core import CloudFormationModel
+from moto.core import BaseModel
 
 
-class Tag(CloudFormationModel):
+class LFTag(BaseModel):
     def __init__(self, catalog_id, tag_key, tag_values):
         self.tag_key = tag_key
-        self.tag_values = list()
+        self.tag_values = tag_values
         self.catalog_id = catalog_id
-        self.tag = {"catalog_id": catalog_id, "tag_key": self.tag_key, "tag_values": self.tag_values}
-        # {"catalog_id": {
-        #     "tag_key": []
-        # }}  
-
-    def to_describe_dict(self):
-        print(dir(self))
-
-        return {
-            "CatalogId": self.catalog_id,
-            "TagKey": self.tag_key,
-            "TagValues": self.tag_values,
+        self.tag = {
+            catalog_id: [
+                {
+                    "tag_key": self.tag_key,
+                    "tag_values": self.tag_values
+                }
+            ]
         }
+
+
+class DataCatalog(BaseModel):
+    def __init__(self, catalog_id):
+        self.catalog_id = catalog_id
+        self.lf_tags = list()
 
 
 class LakeFormationBackend(BaseBackend):
@@ -32,25 +33,24 @@ class LakeFormationBackend(BaseBackend):
 
     def __init__(self, region_name, account_id):
         super().__init__(region_name, account_id)
-        self.tags = dict()
-
-    # add methods from here
+        self.data_catalogs = {"AwsDataCatalog": {"LFTags": []}}
 
     def create_lf_tag(self, catalog_id, tag_key, tag_values):
-        if self.tags.get(catalog_id):
-            if tag_key in list(self.tags.get(catalog_id)):
+        if catalog_id in self.data_catalogs:
+            if tag_key in list(self.data_catalogs.keys()):
                 raise ResourceAlreadyExistsException()
-
-        self.tags[catalog_id] = {"catalog_id": catalog_id, "tag_key": tag_key, "tag_values": tag_values}
-
-        return self.tags[catalog_id]
+        self.data_catalogs[catalog_id]["LFTags"].append(LFTag(catalog_id, tag_key, tag_values))
+        return self.data_catalogs[catalog_id]
 
 
     def list_lf_tags(self, catalog_id, resource_share_type, max_results, next_token):
-        tags = self.tags.get(catalog_id)
-        print(tags)
-        return tags, {}
-        # return lf_tags, next_token
+        try:
+            models_tags = self.data_catalogs[catalog_id]["LFTags"]
+            returned_tags = [{'CatalogId': catalog_id, 'TagKey': tag.tag_key, 'TagValues': tag.tag_values} for tag in models_tags]
+            next_token = "more"
+            return returned_tags, next_token
+        except AttributeError:
+            return None
 
 
 lakeformation_backends = BackendDict(LakeFormationBackend, "lakeformation")
